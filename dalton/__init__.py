@@ -1,11 +1,11 @@
-import httplib
+import http.client
 import inspect
 import logging
 import threading
 import pprint
 import os
 import sys
-import StringIO
+import io
 from contextlib import contextmanager
 
 log = logging.getLogger(__name__)
@@ -15,12 +15,12 @@ __all__ = ['inject', 'Recorder', 'Player', 'FileWrapper']
 
 def inject():
     """Monkey-patch httplib with Dalton"""
-    if not hasattr(httplib.HTTPConnection, '_orig_request'):
-        httplib.HTTPConnection._orig_request = httplib.HTTPConnection.request
-        httplib.HTTPConnection._orig_getresponse = httplib.HTTPConnection.getresponse
-        httplib.HTTPConnection.request = _request
-        httplib.HTTPConnection.getresponse = _getresponse
-        httplib.HTTPConnection._intercept = _intercept
+    if not hasattr(http.client.HTTPConnection, '_orig_request'):
+        http.client.HTTPConnection._orig_request = http.client.HTTPConnection.request
+        http.client.HTTPConnection._orig_getresponse = http.client.HTTPConnection.getresponse
+        http.client.HTTPConnection.request = _request
+        http.client.HTTPConnection.getresponse = _getresponse
+        http.client.HTTPConnection._intercept = _intercept
 
 
 class RegisteredInjections(threading.local):
@@ -68,7 +68,7 @@ class InteractionStep(object):
         self.response_body = self.response_version = None
     
     def _pprint(self, obj):
-        out = StringIO.StringIO()
+        out = io.StringIO()
         pprint.pprint(obj, indent=21, stream=out)
         out.seek(0)
         content = out.read()
@@ -168,7 +168,7 @@ class Recorder(object):
         new_step.response_headers = http_response.getheaders()
         body = http_response.read()
         new_step.response_body = body
-        http_response.fp = StringIO.StringIO(body)
+        http_response.fp = io.StringIO(body)
         http_response.length = len(body)
         self._interaction.append(new_step)
         self._current_step = None
@@ -277,7 +277,7 @@ class DaltonHTTPResponse(object):
     def __init__(self, response=None):
         self._content = None
         self._headers = {}
-        self.msg = httplib.HTTPMessage(StringIO.StringIO(), 0)
+        self.msg = http.client.HTTPMessage(io.StringIO(), 0)
         if response:
             headers = response['headers']
             for header, value in headers:
@@ -289,22 +289,22 @@ class DaltonHTTPResponse(object):
             body = response['body']
             if isinstance(body, FileWrapper):
                 body = body.load()
-            self._content = StringIO.StringIO(body)
+            self._content = io.StringIO(body)
 
     def read(self, amt=None):
         if self._content is None:
-            raise httplib.ResponseNotReady()
+            raise http.client.ResponseNotReady()
         return self._content.read(amt)
 
     def getheader(self, name, default=None):
         if self.msg is None:
-            raise httplib.ResponseNotReady()
+            raise http.client.ResponseNotReady()
         return self.msg.getheader(name, default)
 
     def getheaders(self):
         if self.msg is None:
-            raise httplib.ResponseNotReady()
-        return self.msg.items()
+            raise http.client.ResponseNotReady()
+        return list(self.msg.items())
 
     def close(self):
         pass

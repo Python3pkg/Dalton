@@ -1,14 +1,14 @@
 import os
 import unittest
 import dalton
-import urllib
+import urllib.request, urllib.parse, urllib.error
 dalton.inject()
 
 here = os.path.abspath(os.path.dirname(__file__))
 
 class TestInject(unittest.TestCase):
     def _makeHttp(self, host):
-        from httplib import HTTPConnection
+        from http.client import HTTPConnection
         return HTTPConnection(host)
 
     def testPlainRequest(self):
@@ -28,7 +28,7 @@ class TestInject(unittest.TestCase):
 
 class TestRecorder(unittest.TestCase):
     def _makeHttp(self, host):
-        from httplib import HTTPConnection
+        from http.client import HTTPConnection
         return HTTPConnection(host)
     
     def testRecord(self):
@@ -42,7 +42,7 @@ class TestRecorder(unittest.TestCase):
     
     def testSave(self):
         h = self._makeHttp('www.google.com')
-        params = urllib.urlencode({'q': 'dalton'})
+        params = urllib.parse.urlencode({'q': 'dalton'})
         recorder = dalton.Recorder(caller=h)
         with recorder.recording():
             h.request('GET', '/')
@@ -72,7 +72,7 @@ class TestRecorder(unittest.TestCase):
 
 class TestGlobalRecorder(unittest.TestCase):
     def _makeHttp(self, host):
-        from httplib import HTTPConnection
+        from http.client import HTTPConnection
         return HTTPConnection(host)
     
     def testRecord(self):
@@ -86,7 +86,7 @@ class TestGlobalRecorder(unittest.TestCase):
     
     def testSave(self):
         h = self._makeHttp('www.google.com')
-        params = urllib.urlencode({'q': 'dalton'})
+        params = urllib.parse.urlencode({'q': 'dalton'})
         recorder = dalton.Recorder(use_global=True)
         with recorder.recording():
             h.request('GET', '/')
@@ -107,7 +107,7 @@ class TestGlobalRecorder(unittest.TestCase):
 
 class TestPlayer(unittest.TestCase):
     def _makeHttp(self, host):
-        from httplib import HTTPConnection
+        from http.client import HTTPConnection
         return HTTPConnection(host)
     
     def testPlay(self):
@@ -138,7 +138,7 @@ class TestPlayer(unittest.TestCase):
 
 class TestGlobalPlayer(unittest.TestCase):
     def _makeHttp(self, host):
-        from httplib import HTTPConnection
+        from http.client import HTTPConnection
         return HTTPConnection(host)
     
     def testPlay(self):
